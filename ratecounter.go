@@ -1,6 +1,7 @@
 package ratecounter
 
 import (
+	"context"
 	"strconv"
 	"sync/atomic"
 	"time"
@@ -15,13 +16,15 @@ type RateCounter struct {
 	partials   []Counter
 	current    int32
 	running    int32
+	ctx        context.Context
 }
 
 // NewRateCounter Constructs a new RateCounter, for the interval provided
-func NewRateCounter(intrvl time.Duration) *RateCounter {
+func NewRateCounter(ctx context.Context, intrvl time.Duration) *RateCounter {
 	ratecounter := &RateCounter{
 		interval: intrvl,
 		running:  0,
+		ctx:      ctx,
 	}
 
 	return ratecounter.WithResolution(20)
@@ -48,17 +51,18 @@ func (r *RateCounter) run() {
 	go func() {
 		ticker := time.NewTicker(time.Duration(float64(r.interval) / float64(r.resolution)))
 
-		for range ticker.C {
-			current := atomic.LoadInt32(&r.current)
-			next := (int(current) + 1) % r.resolution
-			r.counter.Incr(-1 * r.partials[next].Value())
-			r.partials[next].Reset()
-			atomic.CompareAndSwapInt32(&r.current, current, int32(next))
-			if r.counter.Value() == 0 {
+		for {
+			select {
+			case <-r.ctx.Done():
 				atomic.StoreInt32(&r.running, 0)
 				ticker.Stop()
-
 				return
+			case <-ticker.C:
+				current := atomic.LoadInt32(&r.current)
+				next := (int(current) + 1) % r.resolution
+				r.counter.Incr(-1 * r.partials[next].Value())
+				r.partials[next].Reset()
+				atomic.CompareAndSwapInt32(&r.current, current, int32(next))
 			}
 		}
 	}()

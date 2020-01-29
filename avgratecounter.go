@@ -1,6 +1,7 @@
 package ratecounter
 
 import (
+	"context"
 	"strconv"
 	"time"
 )
@@ -16,8 +17,8 @@ type AvgRateCounter struct {
 // NewAvgRateCounter constructs a new AvgRateCounter, for the interval provided
 func NewAvgRateCounter(intrvl time.Duration) *AvgRateCounter {
 	return &AvgRateCounter{
-		hits:     NewRateCounter(intrvl),
-		counter:  NewRateCounter(intrvl),
+		hits:     NewRateCounter(context.Background(), intrvl),
+		counter:  NewRateCounter(context.Background(), intrvl),
 		interval: intrvl,
 	}
 }
