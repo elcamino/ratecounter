@@ -19,7 +19,8 @@ type RateCounter struct {
 	ctx        context.Context
 }
 
-// NewRateCounter Constructs a new RateCounter, for the interval provided
+// NewRateCounter Constructs a new RateCounter for the interval provided
+// The counter runs until its context is cancelled
 func NewRateCounter(ctx context.Context, intrvl time.Duration) *RateCounter {
 	ratecounter := &RateCounter{
 		interval: intrvl,

@@ -10,7 +10,7 @@ A Thread-Safe RateCounter implementation in Golang
 ## Usage
 
 ```
-import "github.com/paulbellamy/ratecounter"
+import "github.com/elcamino/ratecounter"
 ```
 
 Package ratecounter provides a thread-safe rate-counter, for tracking
@@ -21,20 +21,25 @@ example):
 
 ```go
 // We're recording marks-per-1second
-counter := ratecounter.NewRateCounter(1 * time.Second)
+ctx, cancel := context.WithCancel(context.Background())
+counter := ratecounter.NewRateCounter(ctx, 1 * time.Second)
 // Record an event happening
 counter.Incr(1)
 // get the current requests-per-second
 counter.Rate()
+// the counter continues to run until its context is cancelled
+cancel()
 ```
 
 To record an average over a longer period, you can:
 
 ```go
 // Record requests-per-minute
-counter := ratecounter.NewRateCounter(60 * time.Second)
+ctx, cancel := context.WithCancel(context.Background())
+counter := ratecounter.NewRateCounter(ctx, 60 * time.Second)
 // Calculate the average requests-per-second for the last minute
 counter.Rate() / 60
+cancel()
 ```
 
 Also you can track average value of some metric in an interval.
@@ -44,6 +49,7 @@ example):
 
 ```go
 // We're recording average execution time of some heavy operation in the last minute.
+ctx, cancel := context.WithCancel(context.Background())
 counter := ratecounter.NewAvgRateCounter(60 * time.Second)
 // Start timer.
 startTime := time.Now()
@@ -53,9 +59,10 @@ heavyOperation()
 counter.Incr(time.Since(startTime).Nanoseconds())
 // Get the current average execution time.
 counter.Rate()
+cancel()
 ```
 
 ## Documentation
 
-Check latest documentation on [go doc](https://godoc.org/github.com/paulbellamy/ratecounter).
+Check latest documentation on [go doc](https://godoc.org/github.com/elcamino/ratecounter).
 
